@@ -1,0 +1,16 @@
+# Build artifacts
+*.zip
+addon.zip
+
+# Editor directories
+.cursor/
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules (if you add any build tools later)
+node_modules/
+
