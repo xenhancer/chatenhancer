@@ -17,5 +17,11 @@ node_modules/
 # Helper/temporary files
 generate_icons.html
 create_icons.py
-PRE_PUBLISH_CHECKLIST.md
+
+# Documentation files (except README.md)
+*.md
+!README.md
+
+# Publishing-related files
+/*.png
 

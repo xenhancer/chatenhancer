@@ -5,7 +5,8 @@
   "description": "Enhances AI chat interfaces with collapsible answers, quick controls, and improved navigation.",
   "icons": {
     "48": "icons/icon-48.png",
-    "96": "icons/icon-96.png"
+    "96": "icons/icon-96.png",
+    "128": "icons/icon-128.png"
   },
   "permissions": [],
   "host_permissions": [
