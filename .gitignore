@@ -14,3 +14,9 @@ Thumbs.db
 # Node modules (if you add any build tools later)
 node_modules/
 
+# Helper/temporary files
+generate_icons.html
+create_icons.py
+package.sh
+PRE_PUBLISH_CHECKLIST.md
+

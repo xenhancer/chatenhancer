@@ -1,6 +1,6 @@
 (() => {
   const EXTENSION_TAG_ID = "chatgpt-page-enhancer-root";
-  const EXTENSION_VERSION = "v0.2-collapsible-test";
+  const EXTENSION_VERSION = "v1.0.0";
 
   function log(...args) {
     console.log("[ChatGPT Enhancer]", ...args);
