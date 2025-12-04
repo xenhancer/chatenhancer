@@ -1,9 +1,9 @@
 (() => {
-  const EXTENSION_TAG_ID = "chatgpt-page-enhancer-root";
+  const EXTENSION_TAG_ID = "chat-enhancer-root";
   const EXTENSION_VERSION = "v1.0.0";
 
   function log(...args) {
-    console.log("[ChatGPT Enhancer]", ...args);
+    console.log("[Chat Enhancer]", ...args);
   }
 
   function waitForInputContainer(timeoutMs = 15000) {
@@ -29,7 +29,7 @@
           observer.disconnect();
         } else if (performance.now() - start > timeoutMs) {
           observer.disconnect();
-          reject(new Error("Timed out waiting for ChatGPT input"));
+          reject(new Error("Timed out waiting for chat input"));
         }
       });
 
@@ -65,7 +65,7 @@
 
     panel.innerHTML = `
       <div id="${EXTENSION_TAG_ID}-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;cursor:move;user-select:none;">
-        <span style="font-weight:500;font-size:10px;color:rgb(51,65,85);letter-spacing:0.2px;">ChatGPT Enhancer</span>
+        <span style="font-weight:500;font-size:10px;color:rgb(51,65,85);letter-spacing:0.2px;">Chat Enhancer</span>
         <button id="${EXTENSION_TAG_ID}-toggle" style="
           all:unset;
           cursor:pointer;
@@ -75,13 +75,10 @@
           font-size:10px;
           color:rgb(71,85,105);
           transition:all 0.2s;
-        ">▼</button>
+        ">▲</button>
       </div>
       <div id="${EXTENSION_TAG_ID}-content" style="display:block;">
-        <div style="font-weight:400;font-size:9px;color:rgb(100,116,139);margin-bottom:6px;opacity:0.9;">
-          ${EXTENSION_VERSION}
-        </div>
-        <div id="${EXTENSION_TAG_ID}-turns" style="font-weight:400;font-size:9px;color:rgb(100,116,139);margin-bottom:10px;padding:2px 0;text-align:center;border-bottom:1px solid rgba(203,213,225,0.3);padding-bottom:8px;">
+        <div id="${EXTENSION_TAG_ID}-turns" style="font-weight:500;font-size:13px;color:rgb(100,116,139);margin-bottom:12px;padding:2px 0;text-align:center;border-bottom:1px solid rgba(203,213,225,0.3);padding-bottom:8px;">
           0 turns
         </div>
         <div style="display:flex;flex-direction:column;gap:8px;">
@@ -111,6 +108,9 @@
           transition:all 0.2s;
           box-shadow:0 1px 3px rgba(249,115,22,0.2);
         ">Collapse All</button>
+        </div>
+        <div style="font-weight:400;font-size:8px;color:rgb(100,116,139);margin-top:10px;text-align:center;opacity:0.7;">
+          ${EXTENSION_VERSION}
         </div>
       </div>
     `;
@@ -279,6 +279,7 @@
 
         function setExpanded(expanded) {
           assistantNode.style.display = expanded ? "" : "none";
+          // Arrow shows the action: ▼ to expand, ▲ to collapse
           arrow.textContent = expanded ? "▲" : "▼";
           questionContainer.setAttribute(
             "data-chatgpt-enhancer-expanded",
@@ -436,7 +437,8 @@
     toggleBtn?.addEventListener("click", () => {
       const isExpanded = contentDiv.style.display !== "none";
       contentDiv.style.display = isExpanded ? "none" : "block";
-      toggleBtn.textContent = isExpanded ? "▲" : "▼";
+      // Arrow shows the action: ▼ to expand, ▲ to collapse
+      toggleBtn.textContent = isExpanded ? "▼" : "▲";
       // Adjust padding when collapsed for a more compact look
       panel.style.padding = isExpanded ? "6px 12px" : "10px 12px";
     });

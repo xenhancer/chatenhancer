@@ -4,7 +4,7 @@
 VERSION=$(grep '"version"' manifest.json | cut -d'"' -f4)
 ZIP_NAME="chatenhancer-v${VERSION}.zip"
 
-echo "Packaging ChatGPT Page Enhancer v${VERSION}..."
+echo "Packaging Chat Enhancer v${VERSION}..."
 
 # Remove old zip if exists
 rm -f "$ZIP_NAME" *.zip

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ChatGPT Page Enhancer",
+  "name": "Chat Enhancer",
   "version": "1.0.0",
-  "description": "Adds extra UI and functions to the ChatGPT website.",
+  "description": "Enhances AI chat interfaces with collapsible answers, quick controls, and improved navigation.",
   "icons": {
     "48": "icons/icon-48.png",
     "96": "icons/icon-96.png"
@@ -24,11 +24,11 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "chatgpt-page-enhancer@xenhancer"
+      "id": "chat-enhancer@xenhancer"
     }
   },
   "action": {
-    "default_title": "ChatGPT Enhancer"
+    "default_title": "Chat Enhancer"
   }
 }
 

@@ -1,6 +1,6 @@
-# ChatGPT Page Enhancer
+# Chat Enhancer
 
-> A browser extension that enhances the ChatGPT website with collapsible answers, quick controls, and improved navigation.
+> A browser extension that enhances AI chat interfaces with collapsible answers, quick controls, and improved navigation.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-blue?logo=google-chrome)](https://chrome.google.com/webstore)
@@ -32,7 +32,7 @@
 4. Click **Load unpacked**
 5. Select this folder (the one containing `manifest.json`)
 6. Open `https://chat.openai.com` or `https://chatgpt.com`
-   - After the page loads, you should see a **"ChatGPT Enhancer"** panel near the bottom-right
+   - After the page loads, you should see a **"Chat Enhancer"** panel near the bottom-right
 
 > **Note**: The extension will remain loaded until you remove it manually. For development, click the refresh icon on the extension card after making changes.
 
@@ -44,24 +44,21 @@
 4. Click **Load Temporary Add-on…**
 5. Select the `manifest.json` file from this folder
 6. Open `https://chat.openai.com` or `https://chatgpt.com`
-   - After the page loads, you should see a **"ChatGPT Enhancer"** panel near the bottom-right
+   - After the page loads, you should see a **"Chat Enhancer"** panel near the bottom-right
 
 > **Note**: Temporary extensions are removed when you close Firefox. For development, just re-load it via **Load Temporary Add-on…**.
 
 ## 📖 Usage
 
-Once installed, the extension automatically activates on ChatGPT pages. You'll see a floating panel in the bottom-right corner with:
+Once installed, the extension automatically activates on supported AI chat pages. You'll see a floating panel in the bottom-right corner with:
 
 - **Turn Counter** - Shows the number of conversation turns
 - **Expand All** - Expands all collapsed answers
 - **Collapse All** - Collapses all answers
-- **Toggle Button (▼)** - Minimize/maximize the panel
 
 ### Collapsible Answers
 
 - Click on any question bubble to toggle its answer visibility
-- The arrow indicator (▼/▲) shows the current state
-- New answers start expanded; older ones start collapsed
 
 ### Draggable Panel
 
@@ -96,7 +93,7 @@ The extension logic is in `content-script.js`. Key functions:
 You can:
 - Modify the UI in `createPanel()` (HTML and inline styles)
 - Add new buttons and functionality in `attachBehavior()`
-- Change element selectors to match ChatGPT's DOM structure
+- Change element selectors to match the target chat interface's DOM structure
 - Customize the collapsible behavior in `setupCollapsibleAnswers()`
 
 No build step required - just edit files and reload the extension.
@@ -143,14 +140,14 @@ This extension:
 - ✅ Runs entirely locally in your browser
 - ✅ Does not collect any data
 - ✅ Does not make external API calls
-- ✅ Only runs on ChatGPT domains (`chat.openai.com` and `chatgpt.com`)
+- ✅ Only runs on specified chat domains (currently `chat.openai.com` and `chatgpt.com`)
 - ✅ Does not transmit any information
 
 Your conversations and data remain completely private.
 
 ## 🙏 Acknowledgments
 
-- Built for the ChatGPT community
+- Built for the AI chat community
 - Inspired by the need for better conversation navigation
 
 ## 📚 Resources
@@ -161,4 +158,4 @@ Your conversations and data remain completely private.
 
 ---
 
-**Note**: This extension is not affiliated with, endorsed by, or connected to OpenAI or ChatGPT. It is an independent, community-driven project.
+**Note**: This extension is not affiliated with, endorsed by, or connected to any AI chat service providers. It is an independent, community-driven project.
