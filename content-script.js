@@ -63,57 +63,59 @@
     panel.style.backdropFilter = "blur(20px)";
     panel.style.border = "1px solid rgba(203, 213, 225, 0.3)";
 
-    panel.innerHTML = `
-      <div id="${EXTENSION_TAG_ID}-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;cursor:move;user-select:none;">
-        <span style="font-weight:500;font-size:10px;color:rgb(51,65,85);letter-spacing:0.2px;">Chat Enhancer</span>
-        <button id="${EXTENSION_TAG_ID}-toggle" style="
-          all:unset;
-          cursor:pointer;
-          padding:2px 6px;
-          border-radius:999px;
-          background:rgba(203,213,225,0.4);
-          font-size:10px;
-          color:rgb(71,85,105);
-          transition:all 0.2s;
-        ">▲</button>
-      </div>
-      <div id="${EXTENSION_TAG_ID}-content" style="display:block;">
-        <div id="${EXTENSION_TAG_ID}-turns" style="font-weight:500;font-size:13px;color:rgb(100,116,139);margin-bottom:12px;padding:2px 0;text-align:center;border-bottom:1px solid rgba(203,213,225,0.3);padding-bottom:8px;">
-          0 turns
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <button id="${EXTENSION_TAG_ID}-expand-all" style="
-          all:unset;
-          cursor:pointer;
-          padding:6px 8px;
-          border-radius:8px;
-          background:linear-gradient(135deg, rgba(34,197,94,0.2), rgba(22,163,74,0.25));
-          font-size:10px;
-          text-align:center;
-          color:rgb(20,83,45);
-          font-weight:500;
-          transition:all 0.2s;
-          box-shadow:0 1px 3px rgba(34,197,94,0.2);
-        ">Expand All</button>
-          <button id="${EXTENSION_TAG_ID}-collapse-all" style="
-          all:unset;
-          cursor:pointer;
-          padding:6px 8px;
-          border-radius:8px;
-          background:linear-gradient(135deg, rgba(249,115,22,0.2), rgba(234,88,12,0.25));
-          font-size:10px;
-          text-align:center;
-          color:rgb(154,52,18);
-          font-weight:500;
-          transition:all 0.2s;
-          box-shadow:0 1px 3px rgba(249,115,22,0.2);
-        ">Collapse All</button>
-        </div>
-        <div style="font-weight:400;font-size:8px;color:rgb(100,116,139);margin-top:10px;text-align:center;opacity:0.7;">
-          ${EXTENSION_VERSION}
-        </div>
-      </div>
-    `;
+    // Create header
+    const header = document.createElement("div");
+    header.id = `${EXTENSION_TAG_ID}-header`;
+    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;cursor:move;user-select:none;";
+    
+    const title = document.createElement("span");
+    title.textContent = "Chat Enhancer";
+    title.style.cssText = "font-weight:500;font-size:10px;color:rgb(51,65,85);letter-spacing:0.2px;";
+    
+    const toggleBtn = document.createElement("button");
+    toggleBtn.id = `${EXTENSION_TAG_ID}-toggle`;
+    toggleBtn.textContent = "▲";
+    toggleBtn.style.cssText = "all:unset;cursor:pointer;padding:2px 6px;border-radius:999px;background:rgba(203,213,225,0.4);font-size:10px;color:rgb(71,85,105);transition:all 0.2s;";
+    
+    header.appendChild(title);
+    header.appendChild(toggleBtn);
+    
+    // Create content
+    const content = document.createElement("div");
+    content.id = `${EXTENSION_TAG_ID}-content`;
+    content.style.display = "block";
+    
+    const turnsDiv = document.createElement("div");
+    turnsDiv.id = `${EXTENSION_TAG_ID}-turns`;
+    turnsDiv.textContent = "0 turns";
+    turnsDiv.style.cssText = "font-weight:500;font-size:13px;color:rgb(100,116,139);margin-bottom:12px;padding:2px 0;text-align:center;border-bottom:1px solid rgba(203,213,225,0.3);padding-bottom:8px;";
+    
+    const buttonsContainer = document.createElement("div");
+    buttonsContainer.style.cssText = "display:flex;flex-direction:column;gap:8px;";
+    
+    const expandBtn = document.createElement("button");
+    expandBtn.id = `${EXTENSION_TAG_ID}-expand-all`;
+    expandBtn.textContent = "Expand All";
+    expandBtn.style.cssText = "all:unset;cursor:pointer;padding:6px 8px;border-radius:8px;background:linear-gradient(135deg, rgba(34,197,94,0.2), rgba(22,163,74,0.25));font-size:10px;text-align:center;color:rgb(20,83,45);font-weight:500;transition:all 0.2s;box-shadow:0 1px 3px rgba(34,197,94,0.2);";
+    
+    const collapseBtn = document.createElement("button");
+    collapseBtn.id = `${EXTENSION_TAG_ID}-collapse-all`;
+    collapseBtn.textContent = "Collapse All";
+    collapseBtn.style.cssText = "all:unset;cursor:pointer;padding:6px 8px;border-radius:8px;background:linear-gradient(135deg, rgba(249,115,22,0.2), rgba(234,88,12,0.25));font-size:10px;text-align:center;color:rgb(154,52,18);font-weight:500;transition:all 0.2s;box-shadow:0 1px 3px rgba(249,115,22,0.2);";
+    
+    buttonsContainer.appendChild(expandBtn);
+    buttonsContainer.appendChild(collapseBtn);
+    
+    const versionDiv = document.createElement("div");
+    versionDiv.textContent = EXTENSION_VERSION;
+    versionDiv.style.cssText = "font-weight:400;font-size:8px;color:rgb(100,116,139);margin-top:10px;text-align:center;opacity:0.7;";
+    
+    content.appendChild(turnsDiv);
+    content.appendChild(buttonsContainer);
+    content.appendChild(versionDiv);
+    
+    panel.appendChild(header);
+    panel.appendChild(content);
 
     document.body.appendChild(panel);
     return panel;
