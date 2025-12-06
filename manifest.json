@@ -11,13 +11,17 @@
   "permissions": [],
   "host_permissions": [
     "https://chat.openai.com/*",
-    "https://chatgpt.com/*"
+    "https://chatgpt.com/*",
+    "https://www.google.com/*",
+    "https://google.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
         "https://chat.openai.com/*",
-        "https://chatgpt.com/*"
+        "https://chatgpt.com/*",
+        "https://www.google.com/*",
+        "https://google.com/*"
       ],
       "js": ["content-script.js"],
       "run_at": "document_idle"

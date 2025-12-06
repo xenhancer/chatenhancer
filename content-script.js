@@ -6,38 +6,288 @@
     console.log("[Chat Enhancer]", ...args);
   }
 
-  function waitForInputContainer(timeoutMs = 15000) {
-    return new Promise((resolve, reject) => {
-      const start = performance.now();
+  log("Script loaded, URL:", window.location.href);
 
-      function find() {
-        const input =
-          document.querySelector("textarea[placeholder*='Send a message']") ||
-          document.querySelector("textarea");
+  // Platform detection
+  function detectPlatform() {
+    const hostname = window.location.hostname;
+    log("Detecting platform, hostname:", hostname);
+    if (hostname.includes("chat.openai.com") || hostname.includes("chatgpt.com")) {
+      return "chatgpt";
+    } else if (hostname.includes("google.com")) {
+      return "google";
+    }
+    return null; // Don't activate on unknown platforms
+  }
 
-        if (input) {
-          resolve(input);
-          return true;
+  const PLATFORM = detectPlatform();
+  log("Platform detected:", PLATFORM);
+
+  // Platform Adapter Interface
+  // Each adapter must implement all these methods
+  function createChatGPTAdapter() {
+    return {
+      name: "chatgpt",
+      
+      isActive: () => {
+        // For ChatGPT, check if input field exists (messages might not exist yet)
+        return document.querySelector("textarea[placeholder*='Ask anything']") !== null ||
+               document.querySelector("textarea[placeholder*='Send a message']") !== null ||
+               document.querySelector('article[data-turn]') !== null;
+      },
+      
+      findInput: (timeoutMs = 15000) => {
+        return new Promise((resolve, reject) => {
+          const start = performance.now();
+          
+          function find() {
+            const input =
+              document.querySelector("textarea[placeholder*='Ask anything']") ||
+              document.querySelector("textarea[placeholder*='Send a message']") ||
+              document.querySelector("textarea");
+            
+            if (input) {
+              resolve(input);
+              return true;
+            }
+            return false;
+          }
+          
+          if (find()) return;
+          
+          const observer = new MutationObserver(() => {
+            if (find()) {
+              observer.disconnect();
+            } else if (performance.now() - start > timeoutMs) {
+              observer.disconnect();
+              reject(new Error("Timed out waiting for chat input"));
+            }
+          });
+          
+          observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true
+          });
+        });
+      },
+      
+      getAllMessageNodes: () => {
+        return Array.from(document.querySelectorAll('article[data-turn]'));
+      },
+      
+      isUserMessage: (node) => {
+        return node.getAttribute("data-turn") === "user";
+      },
+      
+      isAssistantMessage: (node) => {
+        return node.getAttribute("data-turn") === "assistant";
+      },
+      
+      getQuestionContainer: (userNode) => {
+        // Find element with text-message class within the user node
+        const textMessage = userNode.querySelector('.text-message');
+        return textMessage || userNode;
+      },
+      
+      getAnswerContainer: (assistantNode) => {
+        return assistantNode;
+      },
+      
+      isNewMessage: (node) => {
+        if (!(node instanceof HTMLElement)) return false;
+        return node.matches?.('article[data-turn]') ||
+               node.querySelector?.('article[data-turn]');
+      }
+    };
+  }
+
+  // Google Search AI adapter (stub - does nothing yet)
+  function createGoogleAdapter() {
+    const adapter = {
+      name: "google",
+      
+      isActive: () => {
+        // Simple check: only detect textarea placeholder
+        return document.querySelector("textarea[placeholder*='Ask anything']") !== null;
+      },
+      
+      findInput: (timeoutMs = 15000) => {
+        return new Promise((resolve, reject) => {
+          const start = performance.now();
+          
+          function find() {
+            const input = document.querySelector("textarea[placeholder*='Ask anything']");
+            
+            if (input) {
+              resolve(input);
+              return true;
+            }
+            return false;
+          }
+          
+          if (find()) return;
+          
+          const observer = new MutationObserver(() => {
+            if (find()) {
+              observer.disconnect();
+            } else if (performance.now() - start > timeoutMs) {
+              observer.disconnect();
+              reject(new Error("Timed out waiting for chat input"));
+            }
+          });
+          
+          observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true
+          });
+        });
+      },
+      
+      getAllMessageNodes: () => {
+        // Structure:
+        // - Under data-xid="aim-mars-turn-root":
+        //   1. ONE element with data-tr-rsts="true" contains multiple old pairboxes (each has data-scope-id="turn")
+        //   2. MULTIPLE elements with data-tr-rsts="false", each contains ONE new pairbox
+        const container = document.querySelector('[data-xid="aim-mars-turn-root"]');
+        if (!container) {
+          return [];
+        }
+        
+        // Get old pairboxes: inside the data-tr-rsts="true" element, find all data-scope-id="turn"
+        const oldContainer = container.querySelector('[data-tr-rsts="true"]');
+        const oldPairboxes = oldContainer 
+          ? Array.from(oldContainer.querySelectorAll('[data-scope-id="turn"]'))
+          : [];
+        
+        // Get new pairbox containers: each data-tr-rsts="false" element contains one new pairbox
+        // The container itself is what we'll use as the "pairbox" node
+        const newPairboxContainers = Array.from(container.querySelectorAll('[data-tr-rsts="false"]'));
+        
+        // Combine both types
+        const allPairboxes = [...oldPairboxes, ...newPairboxContainers];
+        
+        // Debug: log each pairbox to see what we're finding
+        log(`[Chat Enhancer] Google: Found ${allPairboxes.length} total pairboxes (${oldPairboxes.length} old, ${newPairboxContainers.length} new)`);
+        allPairboxes.forEach((pb, idx) => {
+          const isOld = pb.getAttribute('data-scope-id') === 'turn';
+          const isNew = pb.getAttribute('data-tr-rsts') === 'false';
+          const hasQuestion = adapter.getQuestionContainer(pb) !== pb;
+          const hasAnswer = adapter.isAssistantMessage(pb);
+          log(`  Pairbox ${idx + 1}: old=${isOld}, new=${isNew}, hasQuestion=${hasQuestion}, hasAnswer=${hasAnswer}`);
+        });
+        
+        // Filter to only include pairboxes that have questions (even if no answer yet)
+        const pairboxesWithQuestions = allPairboxes.filter(pb => adapter.isUserMessage(pb) || adapter.isAssistantMessage(pb));
+        
+        log(`[Chat Enhancer] Google: ${pairboxesWithQuestions.length} pairboxes with questions`);
+        return pairboxesWithQuestions;
+      },
+      
+      getAnswerContainer: (pairboxNode) => {
+        // Check if this is a new pairbox (has data-tr-rsts="false")
+        if (pairboxNode.getAttribute('data-tr-rsts') === 'false') {
+          // New structure: find element with data-scope-id="turn" (answer box)
+          const answerBox = pairboxNode.querySelector('[data-scope-id="turn"]');
+          if (answerBox) {
+            return answerBox;
+          }
+        } else {
+          // Old structure: second child is answer box
+          const children = Array.from(pairboxNode.children);
+          if (children.length >= 2) {
+            return children[1]; // Second child is answer
+          }
+        }
+        return pairboxNode;
+      },
+      
+      getQuestionContainer: (pairboxNode) => {
+        // Check if this is a new pairbox (has data-tr-rsts="false")
+        if (pairboxNode.getAttribute('data-tr-rsts') === 'false') {
+          // New structure: find element with role="heading" (question box)
+          const questionBox = pairboxNode.querySelector('[role="heading"]');
+          if (questionBox) {
+            return questionBox;
+          }
+        } else {
+          // Old structure: first child is question box
+          const children = Array.from(pairboxNode.children);
+          if (children.length >= 1) {
+            const firstChild = children[0];
+            // Check if first child has the question class or is the question itself
+            // Look for div.iLZyRc.R7mRQb which is the question bubble
+            const questionBubble = firstChild.querySelector?.('.iLZyRc.R7mRQb') || 
+                                   firstChild.querySelector?.('.iLZyRc') ||
+                                   (firstChild.classList?.contains('iLZyRc') ? firstChild : null);
+            if (questionBubble) {
+              return questionBubble;
+            }
+            // Fallback to first child
+            return firstChild;
+          }
+        }
+        return pairboxNode;
+      },
+      
+      isUserMessage: (pairboxNode) => {
+        // Each pairbox contains (questbox, answerbox) as siblings
+        // Check if this pairbox contains a question box (sibling of answer box with eid)
+        // Find answer box first, then check if question box exists
+        const answerBox = adapter.getAnswerContainer(pairboxNode);
+        if (answerBox && answerBox !== pairboxNode) {
+          return adapter.getQuestionContainer(pairboxNode) !== pairboxNode;
         }
         return false;
-      }
-
-      if (find()) return;
-
-      const observer = new MutationObserver(() => {
-        if (find()) {
-          observer.disconnect();
-        } else if (performance.now() - start > timeoutMs) {
-          observer.disconnect();
-          reject(new Error("Timed out waiting for chat input"));
+      },
+      
+      isAssistantMessage: (pairboxNode) => {
+        // Check if this pairbox contains an answer box
+        if (pairboxNode.getAttribute('data-tr-rsts') === 'false') {
+          // New structure: check if pairbox has an element with data-scope-id="turn" (answer box)
+          const answerBox = pairboxNode.querySelector('[data-scope-id="turn"]');
+          return answerBox !== null;
+        } else {
+          // Old structure: check if second child exists (answer box)
+          const children = Array.from(pairboxNode.children);
+          return children.length >= 2;
         }
-      });
+      },
+      
+      isNewMessage: (node) => {
+        // Check if this pairbox is new (not yet processed)
+        // Check if it already has our data attribute
+        // Only check if node is an Element (not text node, comment, etc.)
+        if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+          return false;
+        }
+        return !node.hasAttribute('data-chat-enhancer-processed');
+      }
+    };
+    
+    return adapter;
+  }
 
-      observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true
-      });
-    });
+  // Platform adapters registry
+  const adapters = {
+    chatgpt: createChatGPTAdapter(),
+    google: createGoogleAdapter()
+  };
+
+  // Get the current platform adapter
+  const adapter = PLATFORM ? adapters[PLATFORM] : null;
+
+  // Don't initialize if platform is not supported
+  if (!adapter) {
+    log("Platform not supported:", PLATFORM);
+    return;
+  }
+
+  log("Platform detected:", PLATFORM, "using adapter:", adapter.name);
+  log("Adapter isActive check:", adapter.isActive());
+
+  // Use adapter to find input
+  function waitForInputContainer(timeoutMs = 15000) {
+    return adapter.findInput(timeoutMs);
   }
 
   function createPanel() {
@@ -123,23 +373,20 @@
 
   // Expand all answers in the current conversation
   function expandAllAnswers() {
-    const roleNodes = Array.from(
-      document.querySelectorAll('article[data-turn]')
-    );
-    const assistants = roleNodes.filter(
-      (n) => n.getAttribute("data-turn") === "assistant"
-    );
+    const roleNodes = adapter.getAllMessageNodes();
+    const assistants = roleNodes.filter((n) => adapter.isAssistantMessage(n));
 
     assistants.forEach((assistantNode) => {
       // Show assistant article
-      assistantNode.style.display = "";
+      const answerContainer = adapter.getAnswerContainer(assistantNode);
+      answerContainer.style.display = "";
 
       // Find the closest previous user article to update its arrow state
       let userNode = null;
       const assistantIndex = roleNodes.indexOf(assistantNode);
       for (let i = assistantIndex - 1; i >= 0; i -= 1) {
         const candidate = roleNodes[i];
-        if (candidate.getAttribute("data-turn") === "user") {
+        if (adapter.isUserMessage(candidate)) {
           userNode = candidate;
           break;
         }
@@ -147,37 +394,33 @@
 
       if (!userNode) return;
 
-      const questionContainer =
-        userNode.querySelector(".text-message") || userNode;
+      const questionContainer = adapter.getQuestionContainer(userNode);
       const arrow = questionContainer.querySelector(
-        "[data-chatgpt-enhancer-question-arrow='1']"
+        "[data-chat-enhancer-question-arrow='1']"
       );
       if (arrow) {
         arrow.textContent = "▲";
       }
-      questionContainer.setAttribute("data-chatgpt-enhancer-expanded", "1");
+      questionContainer.setAttribute("data-chat-enhancer-expanded", "1");
     });
   }
 
   // Collapse all answers in the current conversation
   function collapseAllAnswers() {
-    const roleNodes = Array.from(
-      document.querySelectorAll('article[data-turn]')
-    );
-    const assistants = roleNodes.filter(
-      (n) => n.getAttribute("data-turn") === "assistant"
-    );
+    const roleNodes = adapter.getAllMessageNodes();
+    const assistants = roleNodes.filter((n) => adapter.isAssistantMessage(n));
 
     assistants.forEach((assistantNode) => {
       // Hide assistant article
-      assistantNode.style.display = "none";
+      const answerContainer = adapter.getAnswerContainer(assistantNode);
+      answerContainer.style.display = "none";
 
       // Find the closest previous user article to update its arrow state
       let userNode = null;
       const assistantIndex = roleNodes.indexOf(assistantNode);
       for (let i = assistantIndex - 1; i >= 0; i -= 1) {
         const candidate = roleNodes[i];
-        if (candidate.getAttribute("data-turn") === "user") {
+        if (adapter.isUserMessage(candidate)) {
           userNode = candidate;
           break;
         }
@@ -185,15 +428,14 @@
 
       if (!userNode) return;
 
-      const questionContainer =
-        userNode.querySelector(".text-message") || userNode;
+      const questionContainer = adapter.getQuestionContainer(userNode);
       const arrow = questionContainer.querySelector(
-        "[data-chatgpt-enhancer-question-arrow='1']"
+        "[data-chat-enhancer-question-arrow='1']"
       );
       if (arrow) {
         arrow.textContent = "▼";
       }
-      questionContainer.setAttribute("data-chatgpt-enhancer-expanded", "0");
+      questionContainer.setAttribute("data-chat-enhancer-expanded", "0");
     });
   }
 
@@ -201,27 +443,32 @@
     const turnsEl = document.getElementById(`${EXTENSION_TAG_ID}-turns`);
     if (!turnsEl) return;
     
-    const assistants = Array.from(
-      document.querySelectorAll('article[data-turn="assistant"]')
-    );
-    const count = assistants.length;
+    const roleNodes = adapter.getAllMessageNodes();
+    
+    let count;
+    if (adapter.name === "chatgpt") {
+      // For ChatGPT: count user messages (questions) as turns
+      // A turn starts when a question is asked, even if answer is still processing
+      count = roleNodes.filter((n) => adapter.isUserMessage(n)).length;
+    } else {
+      // For Google: count pairboxes with questions (each pairbox = 1 turn)
+      // Already filtered to only include pairboxes with questions
+      count = roleNodes.length;
+      // Debug logging for Google
+      const withAnswers = roleNodes.filter((n) => adapter.isAssistantMessage(n)).length;
+      log(`[Chat Enhancer] updateRoundsCount: ${count} total turns, ${withAnswers} with answers`);
+    }
+    
     turnsEl.textContent = `${count} ${count === 1 ? 'turn' : 'turns'}`;
   }
 
   function setupCollapsibleAnswers() {
-    // Work at the outer <article> layer:
-    //   <article data-turn="user"> ... </article>
-    //   <article data-turn="assistant"> ... </article>
-    const ASSISTANT_SELECTOR = 'article[data-turn="assistant"]';
-    const PAIRED_ATTR = "data-chatgpt-enhancer-collapsible-bound";
+    // Use platform adapter for all operations
+    const PAIRED_ATTR = "data-chat-enhancer-collapsible-bound";
 
     function pairOnce(root = document) {
-      const roleNodes = Array.from(
-        root.querySelectorAll('article[data-turn]')
-      );
-      const assistants = roleNodes.filter(
-        (n) => n.getAttribute("data-turn") === "assistant"
-      );
+      const roleNodes = adapter.getAllMessageNodes();
+      const assistants = roleNodes.filter((n) => adapter.isAssistantMessage(n));
 
       log(
         "setupCollapsibleAnswers: found assistant nodes in this pass (index-based):",
@@ -231,14 +478,23 @@
       assistants.forEach((assistantNode) => {
         if (assistantNode.getAttribute(PAIRED_ATTR) === "1") return;
 
-        // Find the closest previous user turn in the roleNodes list
+        // For Google: each pairbox contains both question and answer
+        // So the userNode is the same pairbox (it contains both)
+        // For ChatGPT: find the closest previous user turn
         let userNode = null;
-        const assistantIndex = roleNodes.indexOf(assistantNode);
-        for (let i = assistantIndex - 1; i >= 0; i -= 1) {
-          const candidate = roleNodes[i];
-          if (candidate.getAttribute("data-turn") === "user") {
-            userNode = candidate;
-            break;
+        if (adapter.name === "google") {
+          // In Google, the pairbox itself contains both question and answer
+          // So use the same node
+          userNode = assistantNode;
+        } else {
+          // For ChatGPT, find the closest previous user turn
+          const assistantIndex = roleNodes.indexOf(assistantNode);
+          for (let i = assistantIndex - 1; i >= 0; i -= 1) {
+            const candidate = roleNodes[i];
+            if (adapter.isUserMessage(candidate)) {
+              userNode = candidate;
+              break;
+            }
           }
         }
 
@@ -255,15 +511,20 @@
             : rawQuestion;
 
         // Add an arrow on the visual question bubble (once per question)
-        const questionContainer =
-          userNode.querySelector(".text-message") || userNode;
+        const questionContainer = adapter.getQuestionContainer(userNode);
+        const answerContainer = adapter.getAnswerContainer(assistantNode);
+
+        if (!questionContainer) {
+          log("[Chat Enhancer] Error: questionContainer is null/undefined");
+          return;
+        }
 
         let arrow = questionContainer.querySelector(
-          "[data-chatgpt-enhancer-question-arrow='1']"
+          "[data-chat-enhancer-question-arrow='1']"
         );
         if (!arrow) {
           arrow = document.createElement("span");
-          arrow.setAttribute("data-chatgpt-enhancer-question-arrow", "1");
+          arrow.setAttribute("data-chat-enhancer-question-arrow", "1");
           arrow.textContent = "▼";
 
           // Position arrow just outside the right edge of the question bubble
@@ -280,17 +541,17 @@
         }
 
         function setExpanded(expanded) {
-          assistantNode.style.display = expanded ? "" : "none";
+          answerContainer.style.display = expanded ? "" : "none";
           // Arrow shows the action: ▼ to expand, ▲ to collapse
           arrow.textContent = expanded ? "▲" : "▼";
           questionContainer.setAttribute(
-            "data-chatgpt-enhancer-expanded",
+            "data-chat-enhancer-expanded",
             expanded ? "1" : "0"
           );
         }
 
         // Preserve existing state if already set, otherwise set based on whether it's new
-        const existingState = questionContainer.getAttribute("data-chatgpt-enhancer-expanded");
+        const existingState = questionContainer.getAttribute("data-chat-enhancer-expanded");
         if (existingState !== null) {
           // Keep the existing state
           setExpanded(existingState === "1");
@@ -303,7 +564,7 @@
         questionContainer.style.cursor = "pointer";
         questionContainer.addEventListener("click", () => {
           const current =
-            questionContainer.getAttribute("data-chatgpt-enhancer-expanded") ===
+            questionContainer.getAttribute("data-chat-enhancer-expanded") ===
             "1";
           setExpanded(!current);
         });
@@ -323,14 +584,7 @@
       for (const m of mutations) {
         if (!m.addedNodes || !m.addedNodes.length) continue;
         m.addedNodes.forEach((node) => {
-          if (!(node instanceof HTMLElement)) return;
-          // Check if a new article with data-turn was added
-          if (
-            node.matches?.(ASSISTANT_SELECTOR) ||
-            node.matches?.('article[data-turn="user"]') ||
-            node.querySelector?.(ASSISTANT_SELECTOR) ||
-            node.querySelector?.('article[data-turn="user"]')
-          ) {
+          if (adapter.isNewMessage(node)) {
             shouldRepair = true;
           }
         });
@@ -455,23 +709,34 @@
   }
 
   function init() {
-    if (window.top !== window) return;
+    if (window.top !== window) {
+      log("Skipping init: not in top window");
+      return;
+    }
+
+    log("Init called, platform:", PLATFORM, "adapter:", adapter?.name);
+    log("Checking if adapter is active:", adapter?.isActive());
 
     waitForInputContainer()
       .then((textarea) => {
+        log("Input found, creating panel");
         const panel = createPanel();
         attachBehavior(textarea, panel);
         setupCollapsibleAnswers();
-        log("Enhancer initialized.");
+        log("Enhancer initialized on", PLATFORM);
       })
       .catch((err) => {
         log("Could not initialize enhancer:", err);
+        log("Error details:", err.message, err.stack);
       });
   }
 
+  log("Document ready state:", document.readyState);
   if (document.readyState === "complete" || document.readyState === "interactive") {
+    log("Calling init immediately");
     init();
   } else {
+    log("Waiting for DOMContentLoaded");
     window.addEventListener("DOMContentLoaded", init, { once: true });
   }
 })();
