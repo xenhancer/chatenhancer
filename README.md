@@ -12,6 +12,7 @@
 - **Expand/Collapse All** - Quick buttons to control all answers at once
 - **Turn Counter** - See how many conversation turns you've had
 - **Draggable Panel** - Reposition the control panel anywhere on the page
+- **Multi-Platform Support** - Works with ChatGPT, Google Search AI, and Grok
 - **Lightweight** - No external dependencies, pure JavaScript
 - **Privacy-First** - No data collection, no external API calls, runs entirely locally
 
@@ -31,7 +32,10 @@
 3. Enable **Developer mode** (toggle in the top-right corner)
 4. Click **Load unpacked**
 5. Select this folder (the one containing `manifest.json`)
-6. Open `https://chat.openai.com` or `https://chatgpt.com`
+6. Open a supported AI chat platform:
+   - `https://chat.openai.com` or `https://chatgpt.com` (ChatGPT)
+   - `https://www.google.com` (Google Search AI mode)
+   - `https://grok.com` (Grok)
    - After the page loads, you should see a **"Chat Enhancer"** panel near the bottom-right
 
 > **Note**: The extension will remain loaded until you remove it manually. For development, click the refresh icon on the extension card after making changes.
@@ -43,7 +47,10 @@
 3. Click **This Firefox** in the left sidebar
 4. Click **Load Temporary Add-on…**
 5. Select the `manifest.json` file from this folder
-6. Open `https://chat.openai.com` or `https://chatgpt.com`
+6. Open a supported AI chat platform:
+   - `https://chat.openai.com` or `https://chatgpt.com` (ChatGPT)
+   - `https://www.google.com` (Google Search AI mode)
+   - `https://grok.com` (Grok)
    - After the page loads, you should see a **"Chat Enhancer"** panel near the bottom-right
 
 > **Note**: Temporary extensions are removed when you close Firefox. For development, just re-load it via **Load Temporary Add-on…**.
@@ -51,6 +58,12 @@
 ## 📖 Usage
 
 Once installed, the extension automatically activates on supported AI chat pages. You'll see a floating panel in the bottom-right corner with:
+
+### Supported Platforms
+
+- **ChatGPT** - `chat.openai.com` and `chatgpt.com`
+- **Google Search AI** - `google.com` (AI mode, not homepage)
+- **Grok** - `grok.com`
 
 - **Turn Counter** - Shows the number of conversation turns
 - **Expand All** - Expands all collapsed answers
@@ -90,10 +103,20 @@ The extension logic is in `content-script.js`. Key functions:
 - `updateRoundsCount()` - Updates the turn counter
 - `attachBehavior()` - Attaches event handlers
 
+### Adding New Platforms
+
+The extension uses a minimal adapter interface to support multiple platforms. To add support for a new platform, create an adapter with 3 methods:
+
+- `isActive()` - Check if the platform is active
+- `getPairs()` - Return array of `{questionContainer, answerContainer}` pairs
+- `isNewPair(node)` - Check if a DOM node represents a new pair
+
+See `PLATFORM_DOM_STRUCTURE.md` for details on existing platform structures.
+
 You can:
 - Modify the UI in `createPanel()` (HTML and inline styles)
 - Add new buttons and functionality in `attachBehavior()`
-- Change element selectors to match the target chat interface's DOM structure
+- Add new platform adapters following the minimal interface pattern
 - Customize the collapsible behavior in `setupCollapsibleAnswers()`
 
 No build step required - just edit files and reload the extension.
@@ -140,7 +163,10 @@ This extension:
 - ✅ Runs entirely locally in your browser
 - ✅ Does not collect any data
 - ✅ Does not make external API calls
-- ✅ Only runs on specified chat domains (currently `chat.openai.com` and `chatgpt.com`)
+- ✅ Only runs on specified chat domains:
+  - `chat.openai.com` and `chatgpt.com` (ChatGPT)
+  - `google.com` (Google Search AI)
+  - `grok.com` (Grok)
 - ✅ Does not transmit any information
 
 Your conversations and data remain completely private.
