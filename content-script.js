@@ -16,6 +16,8 @@
       return "chatgpt";
     } else if (hostname.includes("google.com")) {
       return "google";
+    } else if (hostname.includes("grok.com")) {
+      return "grok";
     }
     return null; // Don't activate on unknown platforms
   }
@@ -238,10 +240,99 @@
     };
   }
 
+  // Grok adapter
+  function createGrokAdapter() {
+    return {
+      isActive: () => {
+        // Check if Grok page is active - find form element with data-placeholder="How can Grok help?"
+        return document.querySelector('form [data-placeholder="How can Grok help?"]') !== null;
+      },
+      
+      getPairs: () => {
+        // Find all elements with id starting with "response-"
+        // They alternate: question, answer, question, answer, ...
+        const allResponses = Array.from(document.querySelectorAll('[id^="response-"]'))
+          .filter(el => el.id && el.id.startsWith('response-'))
+          .sort((a, b) => {
+            // Sort by DOM order to maintain sequence
+            const position = a.compareDocumentPosition(b);
+            if (position & Node.DOCUMENT_POSITION_FOLLOWING) {
+              return -1;
+            } else if (position & Node.DOCUMENT_POSITION_PRECEDING) {
+              return 1;
+            }
+            return 0;
+          });
+        
+        const pairs = [];
+        
+        // Pair them: even index = question, odd index = answer
+        for (let i = 0; i < allResponses.length; i += 2) {
+          const questionContainer = allResponses[i];
+          const answerContainer = allResponses[i + 1] || null;
+          
+          // Only add if question has text content
+          const questionText = (questionContainer.textContent || questionContainer.innerText || "").trim();
+          if (questionText.length > 0) {
+            pairs.push({
+              questionContainer,
+              answerContainer: answerContainer || null
+            });
+          }
+        }
+        
+        return pairs;
+      },
+      
+      isNewPair: (node) => {
+        // Check if node is a new response element that hasn't been processed
+        if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+          return false;
+        }
+        
+        // Check if node itself has id starting with "response-"
+        let responseElement = null;
+        if (node.id && node.id.startsWith('response-')) {
+          responseElement = node;
+        } else {
+          // Check if it contains a response element
+          responseElement = node.querySelector('[id^="response-"]');
+        }
+        
+        if (!responseElement) {
+          return false;
+        }
+        
+        // Check if it's a question (even index in sorted list)
+        const allResponses = Array.from(document.querySelectorAll('[id^="response-"]'))
+          .filter(el => el.id && el.id.startsWith('response-'))
+          .sort((a, b) => {
+            const position = a.compareDocumentPosition(b);
+            if (position & Node.DOCUMENT_POSITION_FOLLOWING) {
+              return -1;
+            } else if (position & Node.DOCUMENT_POSITION_PRECEDING) {
+              return 1;
+            }
+            return 0;
+          });
+        
+        const index = allResponses.indexOf(responseElement);
+        // Only check questions (even indices)
+        if (index % 2 !== 0) {
+          return false;
+        }
+        
+        // Check if already processed
+        return !responseElement.hasAttribute('data-chat-enhancer-collapsible-bound');
+      }
+    };
+  }
+
   // Platform adapters registry
   const adapters = {
     chatgpt: createChatGPTAdapter(),
-    google: createGoogleAdapter()
+    google: createGoogleAdapter(),
+    grok: createGrokAdapter()
   };
 
   // Get the current platform adapter

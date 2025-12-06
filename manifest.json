@@ -13,7 +13,9 @@
     "https://chat.openai.com/*",
     "https://chatgpt.com/*",
     "https://www.google.com/*",
-    "https://google.com/*"
+    "https://google.com/*",
+    "https://grok.com/*",
+    "https://www.grok.com/*"
   ],
   "content_scripts": [
     {
@@ -21,7 +23,9 @@
         "https://chat.openai.com/*",
         "https://chatgpt.com/*",
         "https://www.google.com/*",
-        "https://google.com/*"
+        "https://google.com/*",
+        "https://grok.com/*",
+        "https://www.grok.com/*"
       ],
       "js": ["content-script.js"],
       "run_at": "document_idle"
