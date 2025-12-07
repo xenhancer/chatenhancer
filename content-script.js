@@ -93,24 +93,23 @@
     const getQuestionContainer = (pairboxNode) => {
       // Check if this is a new pairbox (has data-tr-rsts="false")
       if (pairboxNode.getAttribute('data-tr-rsts') === 'false') {
-        // New structure: find element with role="heading" (question box)
-        const questionBox = pairboxNode.querySelector('[role="heading"]');
-        if (questionBox) {
-          return questionBox;
+        // New structure: find role="heading" and traverse up to find parent with data-ved or wiz:wakeup
+        const headingElement = pairboxNode.querySelector('[role="heading"]');
+        if (headingElement) {
+          let parent = headingElement.parentElement;
+          while (parent && parent !== pairboxNode) {
+            if (parent.hasAttribute('data-ved') || parent.hasAttribute('wiz:wakeup')) {
+              return parent;
+            }
+            parent = parent.parentElement;
+          }
+          return headingElement;
         }
       } else {
         // Old structure: first child is question box
         const children = Array.from(pairboxNode.children);
         if (children.length >= 1) {
-          const firstChild = children[0];
-          // Look for div.iLZyRc.R7mRQb which is the question bubble
-          const questionBubble = firstChild.querySelector?.('.iLZyRc.R7mRQb') || 
-                                 firstChild.querySelector?.('.iLZyRc') ||
-                                 (firstChild.classList?.contains('iLZyRc') ? firstChild : null);
-          if (questionBubble) {
-            return questionBubble;
-          }
-          return firstChild;
+          return children[0];
         }
       }
       return pairboxNode;
